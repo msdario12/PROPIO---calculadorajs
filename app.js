@@ -6,7 +6,44 @@ const resultsContainer = document.getElementById("result-container");
 for (const num of Array(10).keys()) {
   const newButton = document.createElement("button");
   newButton.textContent = num;
-  numbersContainer.appendChild(newButton);
+  switch (num) {
+    case 9:
+      numbersContainer.children[0].children[2].appendChild(newButton);
+      break;
+    case 8:
+      numbersContainer.children[0].children[1].appendChild(newButton);
+      break;
+    case 7:
+      numbersContainer.children[0].children[0].appendChild(newButton);
+      break;
+    case 6:
+      numbersContainer.children[1].children[2].appendChild(newButton);
+      break;
+    case 5:
+      numbersContainer.children[1].children[1].appendChild(newButton);
+      break;
+    case 4:
+      numbersContainer.children[1].children[0].appendChild(newButton);
+      break;
+    case 3:
+      numbersContainer.children[2].children[2].appendChild(newButton);
+      break;
+    case 2:
+      numbersContainer.children[2].children[1].appendChild(newButton);
+      break;
+    case 1:
+      numbersContainer.children[2].children[0].appendChild(newButton);
+      break;
+    case 0:
+      numbersContainer.children[3].children[0].appendChild(newButton);
+      break;
+
+    default:
+      break;
+  }
+  // numbersContainer.appendChild(newButton);
+  const classesArray = ["btn", "btn-outline-primary", "px-5", "m-1"];
+  classesArray.forEach((cls) => newButton.classList.add(cls));
   newButton.onclick = (e) => {
     numberState.push(e.target.textContent);
     updateOperationOutput(e.target.textContent);
@@ -31,24 +68,48 @@ const createButtonsOperations = (symbol) => {
     case "=":
       newButton.onclick = () => resultOperation();
       break;
+    case "ans":
+      newButton.onclick = () => ansCallMemory();
+      break;
   }
 };
+// Function to call a last result in memory
+const ansCallMemory = () => {
+  const ansValue = resultState[resultState.length - 1];
+  operationState.push(ansValue);
+  updateOperationOutput(ansValue);
+  console.log(operationState, "ans");
+};
+
 // Call the function to create these operation buttons
-const arrayOfSymbols = ['sqr','^','*','/','+','-','=','(',')']
-arrayOfSymbols.forEach(sym => createButtonsOperations(sym))
+const arrayOfSymbols = ["sqr", "^", "*", "/", "+", "-", "=", "(", ")", "ans"];
+arrayOfSymbols.forEach((sym) => createButtonsOperations(sym));
 
 // Create element to show the result value in the DOM
 const resultOutput = document.createElement("input");
-resultOutput.setAttribute("disabled", true);
+resultOutput.setAttribute("readonly", true);
+resultOutput.classList.add("text-center");
+resultOutput.classList.add("form-control-plaintext");
+resultOutput.classList.add("text-center");
+resultOutput.classList.add("form-control-lg");
 resultsContainer.appendChild(resultOutput);
 // Create element to show the operation stack in the DOM
 const operationOutput = document.createElement("input");
-operationOutput.setAttribute("disabled", true);
+operationOutput.setAttribute("readonly", true);
+// operationOutput.classList.add("form-control-plaintext")
+operationOutput.classList.add("text-center");
+operationOutput.classList.add("form-control-md");
+
 resultsContainer.appendChild(operationOutput);
 // Functions to update the output results and stack of calculation
 const updateOperationOutput = (val = "") => {
   val && operationVisualOutput.push(val);
-  const output = operationVisualOutput.reduce((a, b) => a + b);
+  let output = "";
+  if (operationVisualOutput.length > 0) {
+    output = operationVisualOutput.reduce((a, b) => a + b);
+  } else {
+    output = operationVisualOutput;
+  }
   operationOutput.setAttribute("value", output);
 };
 const updateResultOutput = () => {
@@ -103,14 +164,18 @@ const genericOperation = (symbol) => {
 // Function to calculate the total of the operationState
 const resultOperation = () => {
   const lastNumber = createNumberFromArray();
-  //    if (!lastNumber) {
-  //  return;
-  //    }
+  if (!lastNumber) {
+    result = "Error";
+    updateResultOutput();
+    updateOperationOutput();
+    return;
+  }
   operationState = [...operationState, lastNumber];
   calculateTotalFromArray();
   result ? resultState.push(result) : (result = resultState[0]);
   operationState = [];
   operationVisualOutput = [];
+  updateOperationOutput();
   updateResultOutput();
   console.log("result state", resultState);
 };
@@ -162,8 +227,8 @@ const calculateBlock = (array) => {
   array[array.length] === ")" && array.pop();
   array[0] === "(" && array.shift();
   console.log(array, "dentro de arrayCalc");
-  const arrayOfSymbolsOperators = ['sqr','^','*','/','+','-']
-  arrayOfSymbolsOperators.forEach( sym => iterateOperationArray(sym, array))
+  const arrayOfSymbolsOperators = ["sqr", "^", "*", "/", "+", "-"];
+  arrayOfSymbolsOperators.forEach((sym) => iterateOperationArray(sym, array));
   console.log(array[0], "RES-dentro de arrayCalc");
   return array[0];
 };
