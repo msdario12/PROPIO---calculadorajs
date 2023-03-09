@@ -2,10 +2,15 @@
 const numbersContainer = document.getElementById("numbers-container");
 const operationsContainer = document.getElementById("operation-container");
 const resultsContainer = document.getElementById("result-container");
+// Function to append class names to an element
+const assignClassesToElement = (element, ...classes) => {
+  classes.forEach( cls => element.classList.add(cls))
+}
 // Create buttons for the numbers and add event listener to each one
-for (const num of Array(10).keys()) {
+for (const num of Array(11).keys()) {
   const newButton = document.createElement("button");
   newButton.textContent = num;
+  // Positioning every number in a grid distribution
   switch (num) {
     case 9:
       numbersContainer.children[0].children[2].appendChild(newButton);
@@ -37,23 +42,49 @@ for (const num of Array(10).keys()) {
     case 0:
       numbersContainer.children[3].children[0].appendChild(newButton);
       break;
+    case 10:
+      newButton.textContent = '.'
+      numbersContainer.children[3].children[1].appendChild(newButton);
+      break;
 
     default:
       break;
   }
   // numbersContainer.appendChild(newButton);
-  const classesArray = ["btn", "btn-outline-primary", "px-5", "m-1"];
-  classesArray.forEach((cls) => newButton.classList.add(cls));
+  // Added classes to every button number
+  assignClassesToElement(newButton, "btn", "btn-primary", "my-1", "w-100")
+  // Add event listener's to every button
   newButton.onclick = (e) => {
     numberState.push(e.target.textContent);
     updateOperationOutput(e.target.textContent);
+    stateEqualPress = false;
   };
 }
 // Create buttons for operations and assign the correct event-listener
 const createButtonsOperations = (symbol) => {
   const newButton = document.createElement("button");
+  // Added classes to every button number
+  assignClassesToElement(newButton, "btn", "btn-secondary", "my-1", "w-100")
   newButton.textContent = symbol;
-  operationsContainer.appendChild(newButton);
+  switch (symbol) {
+    case '=':
+      numbersContainer.children[3].children[2].appendChild(newButton);
+      break;
+    case '/':
+      numbersContainer.children[0].children[3].appendChild(newButton);
+      break;
+    case '*':
+      numbersContainer.children[1].children[3].appendChild(newButton);
+      break;
+    case '-':
+      numbersContainer.children[2].children[3].appendChild(newButton);
+      break;
+    case '+':
+      numbersContainer.children[3].children[3].appendChild(newButton);
+      break;
+  }
+  // operationsContainer.appendChild(newButton);
+  // Asign function to every symbol operation
   switch (symbol) {
     case "(":
     case ")":
@@ -77,30 +108,27 @@ const createButtonsOperations = (symbol) => {
 const ansCallMemory = () => {
   const ansValue = resultState[resultState.length - 1];
   operationState.push(ansValue);
-  updateOperationOutput(ansValue);
-  console.log(operationState, "ans");
+  updateOperationOutput('Ans');
+  console.log(operationState, "Ans");
 };
 
 // Call the function to create these operation buttons
 const arrayOfSymbols = ["sqr", "^", "*", "/", "+", "-", "=", "(", ")", "ans"];
 arrayOfSymbols.forEach((sym) => createButtonsOperations(sym));
 
-// Create element to show the result value in the DOM
-const resultOutput = document.createElement("input");
-resultOutput.setAttribute("readonly", true);
-resultOutput.classList.add("text-center");
-resultOutput.classList.add("form-control-plaintext");
-resultOutput.classList.add("text-center");
-resultOutput.classList.add("form-control-lg");
-resultsContainer.appendChild(resultOutput);
 // Create element to show the operation stack in the DOM
 const operationOutput = document.createElement("input");
 operationOutput.setAttribute("readonly", true);
 // operationOutput.classList.add("form-control-plaintext")
-operationOutput.classList.add("text-center");
-operationOutput.classList.add("form-control-md");
+assignClassesToElement(operationOutput, "text-end", "form-control-md", "form-control-plaintext")
+operationsContainer.appendChild(operationOutput);
 
-resultsContainer.appendChild(operationOutput);
+// Create element to show the result value in the DOM
+const resultOutput = document.createElement("input");
+resultOutput.setAttribute("readonly", true);
+assignClassesToElement(resultOutput, "text-end", "form-control-lg", "form-control-plaintext")
+resultsContainer.appendChild(resultOutput);
+
 // Functions to update the output results and stack of calculation
 const updateOperationOutput = (val = "") => {
   val && operationVisualOutput.push(val);
@@ -136,6 +164,36 @@ let operationVisualOutput = [
   ")",
 ];
 updateOperationOutput();
+let stateEqualPress = false
+let stateOperationOn = false
+let pushAnsAsNumber = false
+
+// START MUTATION OBSERVER
+const configMutation = {attributes: true, childList: true, subtree: true }
+const callback = () => {
+
+  console.log('resultState', resultState)
+  console.log('As change is made')
+  // if (stateOperationOn===true 
+  //   && numberState.length === 0 
+  //   && stateEqualPress === true) {
+  //   console.log('Se hizo operacion sin numero antes')
+  //   pushAnsAsNumber = true
+  // }
+   if (numberState.length === 0 && stateEqualPress === true) {
+     console.log('clear operationState')
+     operationState = [];
+     operationVisualOutput = [];
+    //  stateEqualPress = false
+   }
+
+}
+const observer = new MutationObserver(callback)
+observer.observe(operationOutput, configMutation)
+
+// END MUTATION OBSERVER
+
+
 // Function to create a number from the numberState
 const createNumberFromArray = () => {
   if (numberState.length === 0) {
@@ -147,13 +205,26 @@ const createNumberFromArray = () => {
 };
 // Function to add numbers and operators symbols to the operationState, all the operators call to this function
 const genericOperation = (symbol) => {
-  updateOperationOutput(symbol);
+  // stateOperationOn = true
+  
   const number = createNumberFromArray();
+  
   switch (symbol) {
     case "(":
       operationState = [...operationState, symbol];
       return;
   }
+  if (!number && stateEqualPress) {
+    // const lastResult = resultState.slice(-1)[0]
+    // operationVisualOutput.push('Ans')
+    // operationState = [...operationState, lastResult]
+    ansCallMemory()
+    pushAnsAsNumber = false
+    stateOperationOn = false
+    console.log(operationState, "operatioNState");
+    stateEqualPress = false
+  }
+  updateOperationOutput(symbol);
   if (!number) {
     operationState = [...operationState, symbol];
     return;
@@ -164,7 +235,7 @@ const genericOperation = (symbol) => {
 // Function to calculate the total of the operationState
 const resultOperation = () => {
   const lastNumber = createNumberFromArray();
-  if (!lastNumber) {
+  if (!lastNumber && lastNumber !== 0) {
     result = "Error";
     updateResultOutput();
     updateOperationOutput();
@@ -172,11 +243,13 @@ const resultOperation = () => {
   }
   operationState = [...operationState, lastNumber];
   calculateTotalFromArray();
-  result ? resultState.push(result) : (result = resultState[0]);
-  operationState = [];
-  operationVisualOutput = [];
+  result>=0 ? resultState.push(result) : (result = resultState[0]);
+  // operationState = [];
+  // operationVisualOutput = [];
+  stateEqualPress = true
   updateOperationOutput();
   updateResultOutput();
+  numberState = []
   console.log("result state", resultState);
 };
 
@@ -260,6 +333,6 @@ const calculateTotalFromArray = () => {
   findBlocksOfPhar();
   calculateBlock(operationState);
 
-  result = operationState[0];
+  result = typeof operationState[0] === 'number' && operationState[0];
   console.log("result", result);
 };
