@@ -2,10 +2,11 @@
 const numbersContainer = document.getElementById("numbers-container");
 const operationsContainer = document.getElementById("operation-container");
 const resultsContainer = document.getElementById("result-container");
+
 // Function to append class names to an element
 const assignClassesToElement = (element, ...classes) => {
-  classes.forEach( cls => element.classList.add(cls))
-}
+  classes.forEach((cls) => element.classList.add(cls));
+};
 // Create buttons for the numbers and add event listener to each one
 for (const num of Array(11).keys()) {
   const newButton = document.createElement("button");
@@ -43,7 +44,7 @@ for (const num of Array(11).keys()) {
       numbersContainer.children[3].children[0].appendChild(newButton);
       break;
     case 10:
-      newButton.textContent = '.'
+      newButton.textContent = ".";
       numbersContainer.children[3].children[1].appendChild(newButton);
       break;
 
@@ -52,7 +53,7 @@ for (const num of Array(11).keys()) {
   }
   // numbersContainer.appendChild(newButton);
   // Added classes to every button number
-  assignClassesToElement(newButton, "btn", "btn-primary", "my-1", "w-100")
+  assignClassesToElement(newButton, "btn", "btn-primary", "my-1", "w-100");
   // Add event listener's to every button
   newButton.onclick = (e) => {
     numberState.push(e.target.textContent);
@@ -64,22 +65,22 @@ for (const num of Array(11).keys()) {
 const createButtonsOperations = (symbol) => {
   const newButton = document.createElement("button");
   // Added classes to every button number
-  assignClassesToElement(newButton, "btn", "btn-secondary", "my-1", "w-100")
+  assignClassesToElement(newButton, "btn", "btn-secondary", "my-1", "w-100");
   newButton.textContent = symbol;
   switch (symbol) {
-    case '=':
+    case "=":
       numbersContainer.children[3].children[2].appendChild(newButton);
       break;
-    case '/':
+    case "/":
       numbersContainer.children[0].children[3].appendChild(newButton);
       break;
-    case '*':
+    case "*":
       numbersContainer.children[1].children[3].appendChild(newButton);
       break;
-    case '-':
+    case "-":
       numbersContainer.children[2].children[3].appendChild(newButton);
       break;
-    case '+':
+    case "+":
       numbersContainer.children[3].children[3].appendChild(newButton);
       break;
   }
@@ -108,8 +109,13 @@ const createButtonsOperations = (symbol) => {
 const ansCallMemory = () => {
   const ansValue = resultState[resultState.length - 1];
   operationState.push(ansValue);
-  updateOperationOutput('Ans');
+  operationStateVisual = [...operationState, "Ans:" + ansValue];
+  ansIndex = operationState.indexOf(ansValue);
+  ansValueGlobal = ansValue;
+  console.log("ValAns", ansValueGlobal);
+  updateOperationOutput("Ans");
   console.log(operationState, "Ans");
+  ansState = true;
 };
 
 // Call the function to create these operation buttons
@@ -120,13 +126,23 @@ arrayOfSymbols.forEach((sym) => createButtonsOperations(sym));
 const operationOutput = document.createElement("input");
 operationOutput.setAttribute("readonly", true);
 // operationOutput.classList.add("form-control-plaintext")
-assignClassesToElement(operationOutput, "text-end", "form-control-md", "form-control-plaintext")
+assignClassesToElement(
+  operationOutput,
+  "text-end",
+  "form-control-md",
+  "form-control-plaintext"
+);
 operationsContainer.appendChild(operationOutput);
 
 // Create element to show the result value in the DOM
 const resultOutput = document.createElement("input");
 resultOutput.setAttribute("readonly", true);
-assignClassesToElement(resultOutput, "text-end", "form-control-lg", "form-control-plaintext")
+assignClassesToElement(
+  resultOutput,
+  "text-end",
+  "form-control-lg",
+  "form-control-plaintext"
+);
 resultsContainer.appendChild(resultOutput);
 
 // Functions to update the output results and stack of calculation
@@ -145,9 +161,46 @@ const updateResultOutput = () => {
 };
 // Create initial values for the state
 let numberState = [];
-let operationState = [1, "+", "(", 2, "*", "(", 2, "^", 3, ")", "+", 6, ")"];
+let operationState = [
+  1,
+  "+",
+  "(",
+  2,
+  "*",
+  "(",
+  2,
+  "^",
+  3,
+  ")",
+  "+",
+  6,
+  ")",
+  "+",
+  1,
+];
+let operationStateVisual = [
+  1,
+  "+",
+  "(",
+  2,
+  "*",
+  "(",
+  2,
+  "^",
+  3,
+  ")",
+  "+",
+  6,
+  ")",
+  "+",
+  1,
+];
 let result = 0;
 let resultState = [];
+let ansIndex = "";
+let ansState = false;
+let ansValueGlobal = "";
+let operationHistoryArray = [];
 let operationVisualOutput = [
   1,
   "+",
@@ -164,35 +217,26 @@ let operationVisualOutput = [
   ")",
 ];
 updateOperationOutput();
-let stateEqualPress = false
-let stateOperationOn = false
-let pushAnsAsNumber = false
+let stateEqualPress = false;
 
 // START MUTATION OBSERVER
-const configMutation = {attributes: true, childList: true, subtree: true }
+const configMutation = { attributes: true, childList: true, subtree: true };
 const callback = () => {
-
-  console.log('resultState', resultState)
-  console.log('As change is made')
-  // if (stateOperationOn===true 
-  //   && numberState.length === 0 
-  //   && stateEqualPress === true) {
-  //   console.log('Se hizo operacion sin numero antes')
-  //   pushAnsAsNumber = true
-  // }
-   if (numberState.length === 0 && stateEqualPress === true) {
-     console.log('clear operationState')
-     operationState = [];
-     operationVisualOutput = [];
+  console.log("resultState", resultState);
+  console.log("historyArray", operationHistoryArray);
+  console.log("As change is made");
+  if (numberState.length === 0 && stateEqualPress === true) {
+    console.log("clear operationState");
+    operationState = [];
+    operationStateVisual = [];
+    operationVisualOutput = [];
     //  stateEqualPress = false
-   }
-
-}
-const observer = new MutationObserver(callback)
-observer.observe(operationOutput, configMutation)
+  }
+};
+const observer = new MutationObserver(callback);
+observer.observe(operationOutput, configMutation);
 
 // END MUTATION OBSERVER
-
 
 // Function to create a number from the numberState
 const createNumberFromArray = () => {
@@ -206,23 +250,18 @@ const createNumberFromArray = () => {
 // Function to add numbers and operators symbols to the operationState, all the operators call to this function
 const genericOperation = (symbol) => {
   // stateOperationOn = true
-  
+
   const number = createNumberFromArray();
-  
+
   switch (symbol) {
     case "(":
       operationState = [...operationState, symbol];
       return;
   }
   if (!number && stateEqualPress) {
-    // const lastResult = resultState.slice(-1)[0]
-    // operationVisualOutput.push('Ans')
-    // operationState = [...operationState, lastResult]
-    ansCallMemory()
-    pushAnsAsNumber = false
-    stateOperationOn = false
+    ansCallMemory();
     console.log(operationState, "operatioNState");
-    stateEqualPress = false
+    stateEqualPress = false;
   }
   updateOperationOutput(symbol);
   if (!number) {
@@ -237,19 +276,29 @@ const resultOperation = () => {
   const lastNumber = createNumberFromArray();
   if (!lastNumber && lastNumber !== 0) {
     result = "Error";
+    operationState = [];
+    operationVisualOutput = [];
     updateResultOutput();
     updateOperationOutput();
     return;
   }
   operationState = [...operationState, lastNumber];
+
+  operationStateVisual = [...operationState];
+
+  if (ansState) {
+    operationStateVisual.splice(ansIndex - 3, 0, "Ans:");
+    ansState = false;
+  }
+
+  operationHistoryArray.push([...operationStateVisual]);
+
   calculateTotalFromArray();
-  result>=0 ? resultState.push(result) : (result = resultState[0]);
-  // operationState = [];
-  // operationVisualOutput = [];
-  stateEqualPress = true
+  result !== undefined ? resultState.push(result) : (result = resultState[0]);
+  stateEqualPress = true;
   updateOperationOutput();
   updateResultOutput();
-  numberState = []
+  numberState = [];
   console.log("result state", resultState);
 };
 
@@ -333,6 +382,6 @@ const calculateTotalFromArray = () => {
   findBlocksOfPhar();
   calculateBlock(operationState);
 
-  result = typeof operationState[0] === 'number' && operationState[0];
+  result = typeof operationState[0] === "number" && operationState[0];
   console.log("result", result);
 };
