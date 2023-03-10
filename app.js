@@ -58,7 +58,6 @@ for (const num of Array(11).keys()) {
     default:
       break;
   }
-
   // Added classes to every button number
   assignClassesToElement(newButton, "btn", "btn-primary", "my-1", "w-100");
   // Add event listener's to every button
@@ -126,7 +125,8 @@ const createButtonsOperations = (symbol) => {
 };
 // Function to call a last result in memory
 const ansCallMemory = () => {
-  const ansValue = resultState[resultState.length - 1];
+  const lastValueStack = resultState[resultState.length - 1]
+  const ansValue = typeof lastValueStack === 'number' && lastValueStack;
   operationState.push(ansValue);
   operationStateVisual = [...operationState, "Ans:" + ansValue];
   ansIndex = operationState.indexOf(ansValue);
@@ -261,9 +261,6 @@ const createNumberFromArray = () => {
   if (numberState.length === 0) {
     return;
   }
-  if (numberState.slice(-1)[0] === '.') {
-    return;
-  }
   const num = Number(numberState.reduce((a, b) => a + b));
   numberState = [];
   return num;
@@ -271,11 +268,7 @@ const createNumberFromArray = () => {
 // Function to add numbers and operators symbols to the operationState, all the operators call to this function
 const genericOperation = (symbol) => {
   const number = createNumberFromArray();
-  if (operationState.slice(-1)[0] === symbol && symbol !== "%") {
-    console.log('Signos repetidos')
-    return;
-  }
-  if (!number && stateEqualPress) {
+  if (!number && stateEqualPress && symbol !== '(' && symbol !== ')') {
     ansCallMemory();
     console.log(operationState, "ANS-operatioNState");
     stateEqualPress = false;
@@ -291,19 +284,10 @@ const genericOperation = (symbol) => {
 // Function to calculate the total of the operationState
 const resultOperation = () => {
   const lastNumber = createNumberFromArray();
-  if (!lastNumber && lastNumber !== 0 && operationState.slice(-1)[0] !== '%') {
-    result = "Error";
-    operationState = [];
-    operationVisualOutput = [];
-    updateResultOutput();
-    updateOperationOutput();
-    return;
-  }
-  
   operationState = lastNumber ? [...operationState, lastNumber] : [...operationState];
   operationStateVisual = [...operationState];  
   calculateTotalFromArray();
-  result !== undefined ? resultState.push(result) : (result = resultState[0]);
+  result ? resultState.push(result) : (result = resultState[0]);
   stateEqualPress = true;
   handleResultHistoryList();
   updateOperationOutput();
@@ -325,93 +309,29 @@ const handleResultHistoryList = () => {
 }
 
 // Function to realize the aritmetic calc in function of the index, array and operator who is called
-const calculateOperationFromIndex = (index, operator, array) => {
-  let arrayResult;
-  console.log(array, "antes-operation");
-  const num1 = Number(array[index - 1]);
-  const num2 = Number(array[index + 1]);
-  console.log("num1", num1, "num2", num2);
-  switch (operator) {
-    case "sqr":
-      arrayResult = num2 ** (1 / num1);
-      break;
-    case "^":
-      arrayResult = num1 ** num2;
-      break;
-    case "*":
-      arrayResult = num1 * num2;
-      break;
-    case "%":
-      arrayResult = num1 / 100;
-      break;
-    case "/":
-      arrayResult = num1 / num2;
-      break;
-    case "+":
-      arrayResult = num1 + num2;
-      break;
-    case "-":
-      arrayResult = num1 - num2;
-      break;
+
+const calculateEval = (array) => {
+  array.forEach((item, i)=>{if (item==='^') array[i]='**'})
+  array.forEach((item, i)=>{if (item==='%') array[i]='/100'})
+  const expression = array.reduce((a,b)=>a+b)
+  let result = 0
+  try {
+     result = eval(expression)
+  } catch (error) {
+    operationState = [];
+    operationVisualOutput = [];
+    console.log(error)
+    result = error
   }
-  if (operator === "%") {
-    array[index - 1] = arrayResult;
-    array.splice(index, 1);
-    return;
-  }
-  array[index + 1] = arrayResult;
-  array.splice(index - 1, 2);
-};
-// Function to iterate around one array searching for one specific symbol operator, once no one of this symbol is in the array, continue for the next operator
-const iterateOperationArray = (symbol, array) => {
-  let index = 0;
-  while (array.includes(symbol)) {
-    console.log('array del while', array)
-    if (array[index] === symbol) {
-      calculateOperationFromIndex(index, symbol, array);
-      index = array.includes(symbol) && 0;
-    }
-    index++
-  }
-};
-// [1, "+", "(", 2, "*", "(", 2, "^", 3, ")", "+", 6, ")"]
-// Functions to call the iterations in function of the array and symbol, also manage the calc with parenthesis
-const calculateBlock = (array) => {
-  array[array.length] === ")" && array.pop();
-  array[0] === "(" && array.shift();
-  console.log(array, "dentro de arrayCalc");
-  const arrayOfSymbolsOperators = ["sqr", "^", "*", "%", "/", "+", "-"];
-  arrayOfSymbolsOperators.forEach((sym) => iterateOperationArray(sym, array));
-  console.log(array[0], "RES-dentro de arrayCalc");
-  return array[0];
-};
-let arraySlice = [];
-// Function to find the parenthesis block in the operationState, push every block in to array and call a calculateBlock to get a result for every block
-const findBlocksOfPhar = () => {
-  while (operationState.includes("(")) {
-    let newSlice = [];
-    const initial = operationState.findLastIndex((e) => e === "(");
-    const end = operationState.findIndex((e) => e === ")");
-    // Creamos el slice entre parentesis
-    newSlice = operationState.slice(initial, end + 1);
-    // Agregamos ese slice al array de varios slices
-    // arraySlice.push(newSlice);
-    const arrayLength = newSlice.length;
-    console.log("array de slices", newSlice);
-    // Calculamos ese slice
-    let placeResult = calculateBlock(newSlice);
-    // Agregamos el resultado del calculo del bloque al array de calculo general para ser calculado posteriormente sin parentesis
-    operationState.splice(initial, arrayLength, placeResult);
-    console.log("operation after delete", operationState);
-  }
-};
+  
+  return result
+}
 
 const calculateTotalFromArray = () => {
   if (operationState.length === 0) {
     return;
   }
-  findBlocksOfPhar();
-  calculateBlock(operationState);
-  result = typeof operationState[0] === "number" && operationState[0];
+  const resultEval = calculateEval(operationState)
+  result = resultEval
   console.log("result", result);
 };
