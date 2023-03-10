@@ -2,11 +2,18 @@
 const numbersContainer = document.getElementById("numbers-container");
 const operationsContainer = document.getElementById("operation-container");
 const resultsContainer = document.getElementById("result-container");
-
+const resultHistoryContainer = document.getElementById("result-history-container")
 // Function to append class names to an element
 const assignClassesToElement = (element, ...classes) => {
   classes.forEach((cls) => element.classList.add(cls));
 };
+// Create item list for a history result
+const createListItemResultHistory = content => {
+  const newItem = document.createElement('li')
+  assignClassesToElement(newItem, "list-group-item")
+  newItem.innerHTML= content
+  resultHistoryContainer.appendChild(newItem)
+}
 // Create buttons for the numbers and add event listener to each one
 for (const num of Array(11).keys()) {
   const newButton = document.createElement("button");
@@ -51,7 +58,7 @@ for (const num of Array(11).keys()) {
     default:
       break;
   }
-  // numbersContainer.appendChild(newButton);
+
   // Added classes to every button number
   assignClassesToElement(newButton, "btn", "btn-primary", "my-1", "w-100");
   // Add event listener's to every button
@@ -84,7 +91,6 @@ const createButtonsOperations = (symbol) => {
       numbersContainer.children[3].children[3].appendChild(newButton);
       break;
   }
-  // operationsContainer.appendChild(newButton);
   // Asign function to every symbol operation
   switch (symbol) {
     case "(":
@@ -123,25 +129,19 @@ const arrayOfSymbols = ["sqr", "^", "*", "/", "+", "-", "=", "(", ")", "ans"];
 arrayOfSymbols.forEach((sym) => createButtonsOperations(sym));
 
 // Create element to show the operation stack in the DOM
-const operationOutput = document.createElement("input");
-operationOutput.setAttribute("readonly", true);
-// operationOutput.classList.add("form-control-plaintext")
+const operationOutput = document.createElement("h5");
 assignClassesToElement(
   operationOutput,
   "text-end",
-  "form-control-md",
-  "form-control-plaintext"
+  "mt-2"
 );
 operationsContainer.appendChild(operationOutput);
 
 // Create element to show the result value in the DOM
-const resultOutput = document.createElement("input");
-resultOutput.setAttribute("readonly", true);
+const resultOutput = document.createElement("h1");
 assignClassesToElement(
   resultOutput,
-  "text-end",
-  "form-control-lg",
-  "form-control-plaintext"
+  "text-end"
 );
 resultsContainer.appendChild(resultOutput);
 
@@ -154,10 +154,13 @@ const updateOperationOutput = (val = "") => {
   } else {
     output = operationVisualOutput;
   }
-  operationOutput.setAttribute("value", output);
+  // operationOutput.setAttribute("value", output);
+  operationOutput.innerHTML = output;
 };
+
 const updateResultOutput = () => {
-  resultOutput.setAttribute("value", result);
+  // resultOutput.setAttribute("value", result);
+  resultOutput.innerHTML = result
 };
 // Create initial values for the state
 let numberState = [];
@@ -217,6 +220,7 @@ let operationVisualOutput = [
   ")",
 ];
 updateOperationOutput();
+updateResultOutput();
 let stateEqualPress = false;
 
 // START MUTATION OBSERVER
@@ -249,10 +253,7 @@ const createNumberFromArray = () => {
 };
 // Function to add numbers and operators symbols to the operationState, all the operators call to this function
 const genericOperation = (symbol) => {
-  // stateOperationOn = true
-
   const number = createNumberFromArray();
-
   switch (symbol) {
     case "(":
       operationState = [...operationState, symbol];
@@ -283,19 +284,17 @@ const resultOperation = () => {
     return;
   }
   operationState = [...operationState, lastNumber];
-
   operationStateVisual = [...operationState];
-
   if (ansState) {
-    operationStateVisual.splice(ansIndex - 3, 0, "Ans:");
+    operationStateVisual.splice(ansIndex - 3, ansValueGlobal.toString.length, `<span class="badge bg-secondary">Ans: ${ansValueGlobal} </span>`);
     ansState = false;
   }
-
   operationHistoryArray.push([...operationStateVisual]);
-
   calculateTotalFromArray();
   result !== undefined ? resultState.push(result) : (result = resultState[0]);
   stateEqualPress = true;
+  const resultVisualBadge = `<span class="badge bg-primary">${result}</span>`
+  createListItemResultHistory(operationStateVisual.reduce((a,b)=>a+b)+' = '+resultVisualBadge)
   updateOperationOutput();
   updateResultOutput();
   numberState = [];
