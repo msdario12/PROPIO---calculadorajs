@@ -21,38 +21,38 @@ for (const num of Array(11).keys()) {
   // Positioning every number in a grid distribution
   switch (num) {
     case 9:
-      numbersContainer.children[0].children[2].appendChild(newButton);
-      break;
-    case 8:
-      numbersContainer.children[0].children[1].appendChild(newButton);
-      break;
-    case 7:
-      numbersContainer.children[0].children[0].appendChild(newButton);
-      break;
-    case 6:
       numbersContainer.children[1].children[2].appendChild(newButton);
       break;
-    case 5:
+    case 8:
       numbersContainer.children[1].children[1].appendChild(newButton);
       break;
-    case 4:
+    case 7:
       numbersContainer.children[1].children[0].appendChild(newButton);
       break;
-    case 3:
+    case 6:
       numbersContainer.children[2].children[2].appendChild(newButton);
       break;
-    case 2:
+    case 5:
       numbersContainer.children[2].children[1].appendChild(newButton);
       break;
-    case 1:
+    case 4:
       numbersContainer.children[2].children[0].appendChild(newButton);
       break;
-    case 0:
+    case 3:
+      numbersContainer.children[3].children[2].appendChild(newButton);
+      break;
+    case 2:
+      numbersContainer.children[3].children[1].appendChild(newButton);
+      break;
+    case 1:
       numbersContainer.children[3].children[0].appendChild(newButton);
+      break;
+    case 0:
+      numbersContainer.children[4].children[0].appendChild(newButton);
       break;
     case 10:
       newButton.textContent = ".";
-      numbersContainer.children[3].children[1].appendChild(newButton);
+      numbersContainer.children[4].children[1].appendChild(newButton);
       break;
 
     default:
@@ -75,24 +75,37 @@ const createButtonsOperations = (symbol) => {
   assignClassesToElement(newButton, "btn", "btn-secondary", "my-1", "w-100");
   newButton.textContent = symbol;
   switch (symbol) {
-    case "=":
-      numbersContainer.children[3].children[2].appendChild(newButton);
-      break;
-    case "/":
+    case "Ans":
       numbersContainer.children[0].children[3].appendChild(newButton);
       break;
-    case "*":
+    case "%":
+      numbersContainer.children[0].children[2].appendChild(newButton);
+      break;
+    case ")":
+      numbersContainer.children[0].children[1].appendChild(newButton);
+      break;
+    case "(":
+      numbersContainer.children[0].children[0].appendChild(newButton);
+      break;
+    case "=":
+      numbersContainer.children[4].children[2].appendChild(newButton);
+      break;
+    case "/":
       numbersContainer.children[1].children[3].appendChild(newButton);
       break;
-    case "-":
+    case "*":
       numbersContainer.children[2].children[3].appendChild(newButton);
       break;
-    case "+":
+    case "-":
       numbersContainer.children[3].children[3].appendChild(newButton);
+      break;
+    case "+":
+      numbersContainer.children[4].children[3].appendChild(newButton);
       break;
   }
   // Asign function to every symbol operation
   switch (symbol) {
+    case "%":
     case "(":
     case ")":
     case "sqr":
@@ -106,7 +119,7 @@ const createButtonsOperations = (symbol) => {
     case "=":
       newButton.onclick = () => resultOperation();
       break;
-    case "ans":
+    case "Ans":
       newButton.onclick = () => ansCallMemory();
       break;
   }
@@ -125,7 +138,7 @@ const ansCallMemory = () => {
 };
 
 // Call the function to create these operation buttons
-const arrayOfSymbols = ["sqr", "^", "*", "/", "+", "-", "=", "(", ")", "ans"];
+const arrayOfSymbols = ["sqr", "^", "*", "/", "+", "-", "=", "(", ")", "Ans", "%"];
 arrayOfSymbols.forEach((sym) => createButtonsOperations(sym));
 
 // Create element to show the operation stack in the DOM
@@ -226,11 +239,12 @@ let stateEqualPress = false;
 // START MUTATION OBSERVER
 const configMutation = { attributes: true, childList: true, subtree: true };
 const callback = () => {
-  console.log("resultState", resultState);
-  console.log("historyArray", operationHistoryArray);
-  console.log("As change is made");
+  // console.log("resultState", resultState);
+  // console.log("historyArray", operationHistoryArray);
+  // console.log("As change is made");
+  console.log('numberState',numberState)
   if (numberState.length === 0 && stateEqualPress === true) {
-    console.log("clear operationState");
+    // console.log("clear operationState");
     operationState = [];
     operationStateVisual = [];
     operationVisualOutput = [];
@@ -247,6 +261,9 @@ const createNumberFromArray = () => {
   if (numberState.length === 0) {
     return;
   }
+  if (numberState.slice(-1)[0] === '.') {
+    return;
+  }
   const num = Number(numberState.reduce((a, b) => a + b));
   numberState = [];
   return num;
@@ -254,14 +271,13 @@ const createNumberFromArray = () => {
 // Function to add numbers and operators symbols to the operationState, all the operators call to this function
 const genericOperation = (symbol) => {
   const number = createNumberFromArray();
-  switch (symbol) {
-    case "(":
-      operationState = [...operationState, symbol];
-      return;
+  if (operationState.slice(-1)[0] === symbol && symbol !== "%") {
+    console.log('Signos repetidos')
+    return;
   }
   if (!number && stateEqualPress) {
     ansCallMemory();
-    console.log(operationState, "operatioNState");
+    console.log(operationState, "ANS-operatioNState");
     stateEqualPress = false;
   }
   updateOperationOutput(symbol);
@@ -275,7 +291,7 @@ const genericOperation = (symbol) => {
 // Function to calculate the total of the operationState
 const resultOperation = () => {
   const lastNumber = createNumberFromArray();
-  if (!lastNumber && lastNumber !== 0) {
+  if (!lastNumber && lastNumber !== 0 && operationState.slice(-1)[0] !== '%') {
     result = "Error";
     operationState = [];
     operationVisualOutput = [];
@@ -283,23 +299,30 @@ const resultOperation = () => {
     updateOperationOutput();
     return;
   }
-  operationState = [...operationState, lastNumber];
-  operationStateVisual = [...operationState];
-  if (ansState) {
-    operationStateVisual.splice(ansIndex - 3, ansValueGlobal.toString.length, `<span class="badge bg-secondary">Ans: ${ansValueGlobal} </span>`);
-    ansState = false;
-  }
-  operationHistoryArray.push([...operationStateVisual]);
+  
+  operationState = lastNumber ? [...operationState, lastNumber] : [...operationState];
+  operationStateVisual = [...operationState];  
   calculateTotalFromArray();
   result !== undefined ? resultState.push(result) : (result = resultState[0]);
   stateEqualPress = true;
-  const resultVisualBadge = `<span class="badge bg-primary">${result}</span>`
-  createListItemResultHistory(operationStateVisual.reduce((a,b)=>a+b)+' = '+resultVisualBadge)
+  handleResultHistoryList();
   updateOperationOutput();
   updateResultOutput();
   numberState = [];
   console.log("result state", resultState);
 };
+
+const handleResultHistoryList = () => {
+  if (ansState) {
+    const ansValueLength = ansValueGlobal.toString.length;
+    const ansVisualBadge = `<span class="badge bg-secondary">Ans: ${ansValueGlobal} </span>`;
+    operationStateVisual.splice(ansIndex,ansValueLength, ansVisualBadge);
+    ansState = false;
+  }
+  operationHistoryArray.push([...operationStateVisual]);
+  const resultVisualBadge = `<span class="badge bg-primary">${result}</span>`
+  createListItemResultHistory(operationStateVisual.filter( e => e).reduce((a,b)=>a+b)+' = '+resultVisualBadge)
+}
 
 // Function to realize the aritmetic calc in function of the index, array and operator who is called
 const calculateOperationFromIndex = (index, operator, array) => {
@@ -318,6 +341,9 @@ const calculateOperationFromIndex = (index, operator, array) => {
     case "*":
       arrayResult = num1 * num2;
       break;
+    case "%":
+      arrayResult = num1 / 100;
+      break;
     case "/":
       arrayResult = num1 / num2;
       break;
@@ -328,18 +354,24 @@ const calculateOperationFromIndex = (index, operator, array) => {
       arrayResult = num1 - num2;
       break;
   }
+  if (operator === "%") {
+    array[index - 1] = arrayResult;
+    array.splice(index, 1);
+    return;
+  }
   array[index + 1] = arrayResult;
   array.splice(index - 1, 2);
 };
 // Function to iterate around one array searching for one specific symbol operator, once no one of this symbol is in the array, continue for the next operator
 const iterateOperationArray = (symbol, array) => {
-  for (let index = 0; index < array.length; index++) {
+  let index = 0;
+  while (array.includes(symbol)) {
+    console.log('array del while', array)
     if (array[index] === symbol) {
       calculateOperationFromIndex(index, symbol, array);
-      if (array.includes(symbol)) {
-        index = 0;
-      }
+      index = array.includes(symbol) && 0;
     }
+    index++
   }
 };
 // [1, "+", "(", 2, "*", "(", 2, "^", 3, ")", "+", 6, ")"]
@@ -348,7 +380,7 @@ const calculateBlock = (array) => {
   array[array.length] === ")" && array.pop();
   array[0] === "(" && array.shift();
   console.log(array, "dentro de arrayCalc");
-  const arrayOfSymbolsOperators = ["sqr", "^", "*", "/", "+", "-"];
+  const arrayOfSymbolsOperators = ["sqr", "^", "*", "%", "/", "+", "-"];
   arrayOfSymbolsOperators.forEach((sym) => iterateOperationArray(sym, array));
   console.log(array[0], "RES-dentro de arrayCalc");
   return array[0];
@@ -363,7 +395,7 @@ const findBlocksOfPhar = () => {
     // Creamos el slice entre parentesis
     newSlice = operationState.slice(initial, end + 1);
     // Agregamos ese slice al array de varios slices
-    arraySlice.push(newSlice);
+    // arraySlice.push(newSlice);
     const arrayLength = newSlice.length;
     console.log("array de slices", newSlice);
     // Calculamos ese slice
@@ -380,7 +412,6 @@ const calculateTotalFromArray = () => {
   }
   findBlocksOfPhar();
   calculateBlock(operationState);
-
   result = typeof operationState[0] === "number" && operationState[0];
   console.log("result", result);
 };
