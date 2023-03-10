@@ -123,19 +123,7 @@ const createButtonsOperations = (symbol) => {
       break;
   }
 };
-// Function to call a last result in memory
-const ansCallMemory = () => {
-  const lastValueStack = resultState[resultState.length - 1]
-  const ansValue = typeof lastValueStack === 'number' && lastValueStack;
-  operationState.push(ansValue);
-  operationStateVisual = [...operationState, "Ans:" + ansValue];
-  ansIndex = operationState.indexOf(ansValue);
-  ansValueGlobal = ansValue;
-  console.log("ValAns", ansValueGlobal);
-  updateOperationOutput("Ans");
-  console.log(operationState, "Ans");
-  ansState = true;
-};
+
 
 // Call the function to create these operation buttons
 const arrayOfSymbols = ["sqr", "^", "*", "/", "+", "-", "=", "(", ")", "Ans", "%"];
@@ -164,15 +152,11 @@ const updateOperationOutput = (val = "") => {
   let output = "";
   if (operationVisualOutput.length > 0) {
     output = operationVisualOutput.reduce((a, b) => a + b);
-  } else {
-    output = operationVisualOutput;
   }
-  // operationOutput.setAttribute("value", output);
   operationOutput.innerHTML = output;
 };
 
 const updateResultOutput = () => {
-  // resultOutput.setAttribute("value", result);
   resultOutput.innerHTML = result
 };
 // Create initial values for the state
@@ -236,19 +220,32 @@ updateOperationOutput();
 updateResultOutput();
 let stateEqualPress = false;
 
+// Function to call a last result in memory
+const ansCallMemory = () => {
+  const lastValueStack = resultState[resultState.length - 1]
+  const ansValue = typeof lastValueStack === 'number' && lastValueStack;
+  operationState.push(ansValue);
+  operationStateVisual = [...operationState, "Ans:" + ansValue];
+  ansIndex = operationState.indexOf(ansValue);
+  ansValueGlobal = ansValue;
+  console.log("ValAns", ansValueGlobal);
+  updateOperationOutput("Ans");
+  console.log(operationState, "Ans");
+  ansState = true;
+};
+
 // START MUTATION OBSERVER
 const configMutation = { attributes: true, childList: true, subtree: true };
 const callback = () => {
   // console.log("resultState", resultState);
   // console.log("historyArray", operationHistoryArray);
   // console.log("As change is made");
-  console.log('numberState',numberState)
-  if (numberState.length === 0 && stateEqualPress === true) {
-    // console.log("clear operationState");
+  // console.log('numberState',numberState)
+  // console.log('operState',operationState)
+  if (numberState.length === 0 && stateEqualPress === true && operationState.slice(-1)[0] !== '(') {
     operationState = [];
     operationStateVisual = [];
     operationVisualOutput = [];
-    //  stateEqualPress = false
   }
 };
 const observer = new MutationObserver(callback);
@@ -275,6 +272,7 @@ const genericOperation = (symbol) => {
   }
   updateOperationOutput(symbol);
   if (!number) {
+    console.log("no-number");
     operationState = [...operationState, symbol];
     return;
   }
@@ -287,7 +285,7 @@ const resultOperation = () => {
   operationState = lastNumber ? [...operationState, lastNumber] : [...operationState];
   operationStateVisual = [...operationState];  
   calculateTotalFromArray();
-  result ? resultState.push(result) : (result = resultState[0]);
+  typeof result === 'number' && resultState.push(result);
   stateEqualPress = true;
   handleResultHistoryList();
   updateOperationOutput();
@@ -311,19 +309,23 @@ const handleResultHistoryList = () => {
 // Function to realize the aritmetic calc in function of the index, array and operator who is called
 
 const calculateEval = (array) => {
-  array.forEach((item, i)=>{if (item==='^') array[i]='**'})
-  array.forEach((item, i)=>{if (item==='%') array[i]='/100'})
+  array.forEach((item, i) => {
+    if (item==='^') array[i]='**';
+    if (item==='%') array[i]='/100';
+    if (typeof array[i] === 'number' && array[i+1] === '(') array.splice(i+1,0,'*');
+    if (array[i] === ')' && typeof array[i+1] === 'number') array.splice(i+1,0,'*');
+  })
+  console.log('array',array)
   const expression = array.reduce((a,b)=>a+b)
-  let result = 0
+  let result
   try {
-     result = eval(expression)
+    result = eval(expression)
   } catch (error) {
     operationState = [];
     operationVisualOutput = [];
     console.log(error)
     result = error
   }
-  
   return result
 }
 
